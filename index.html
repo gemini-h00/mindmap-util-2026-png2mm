@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMap to Freeplane (Auto Mode)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; color: #1c1b1f; }
+        .drop-zone { border: 2px dashed #6750a4; transition: all 0.2s ease; height: 300px; }
+        .drop-zone.active { background-color: #eaddff; border-color: #21005d; transform: scale(1.01); }
+        .m3-card { background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e0e0e0; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #6750a4; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .api-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col min-h-screen">
+    <div class="max-w-2xl mx-auto flex-grow w-full">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold mb-2">MindMap：png → mm 変換</h1>
+            <p class="text-[#49454f]">画像 .png をドロップするだけで .mm ファイルを生成</p>
+        </header>
+
+        <!-- API Key Setup -->
+        <div class="m3-card p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold flex items-center gap-2 text-[#6750a4]">
+                    <span class="material-symbols-outlined text-lg">vpn_key</span>
+                    API キー設定
+                </h2>
+                <div class="flex items-center gap-2">
+                    <button id="toggleConfigBtn" class="hidden text-[11px] font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 border border-green-200">
+                        設定済み（クリックで変更）
+                    </button>
+                    <span id="keyStatusLabel" class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">未設定</span>
+                </div>
+            </div>
+
+            <div id="apiKeyConfigBody" class="mt-4">
+                <div class="mb-3">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-link text-[11px] text-[#6750a4] flex items-center gap-1 font-medium">
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                        Google AI Studio で API キーを取得する (Get API KEY)
+                    </a>
+                </div>
+                <div class="flex gap-2">
+                    <input type="password" id="userApiKey" placeholder="Gemini APIキーを入力" 
+                        class="flex-1 p-3 text-sm rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-[#6750a4]">
+                    <button id="saveKeyBtn" title="保存" class="p-3 bg-[#6750a4] text-white rounded-xl hover:bg-[#21005d] flex items-center gap-1 px-4">
+                        <span class="material-symbols-outlined text-sm">save</span>
+                        <span class="text-xs font-bold">保存</span>
+                    </button>
+                    <button id="clearKeyBtn" title="削除" class="p-3 text-red-500 hover:bg-red-50 rounded-xl">
+                        <span class="material-symbols-outlined">delete_forever</span>
+                    </button>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-2 text-center">
+                    ※一度保存すると、次回から入力は不要です（ブラウザに保存されます）。
+                </p>
+            </div>
+        </div>
+
+        <div id="dropZone" class="drop-zone m3-card flex flex-col items-center justify-center cursor-pointer mb-6 bg-[#fcfbff]">
+            <div id="idleState" class="flex flex-col items-center text-center px-4">
+                <div class="w-20 h-20 bg-[#eaddff] rounded-full flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-4xl text-[#21005d]">upload_file</span>
+                </div>
+                <p class="text-lg font-bold">画像をここにドロップ</p>
+                <p class="text-sm text-[#49454f] mt-1">自動的に解析して Freeplane 形式でダウンロードします</p>
+            </div>
+
+            <div id="processingState" class="hidden flex flex-col items-center">
+                <div class="loading-spinner mb-4"></div>
+                <p id="statusMessage" class="text-lg font-bold">処理中...</p>
+            </div>
+            <input type="file" id="fileInput" class="hidden" accept="image/*">
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'freeplane_conv_api_key_v1';
+        let currentApiKey = '';
+
+        const elements = {
+            userApiKey: document.getElementById('userApiKey'),
+            saveKeyBtn: document.getElementById('saveKeyBtn'),
+            clearKeyBtn: document.getElementById('clearKeyBtn'),
+            keyStatusLabel: document.getElementById('keyStatusLabel'),
+            toggleConfigBtn: document.getElementById('toggleConfigBtn'),
+            apiKeyConfigBody: document.getElementById('apiKeyConfigBody'),
+            dropZone: document.getElementById('dropZone'),
+            fileInput: document.getElementById('fileInput'),
+            idleState: document.getElementById('idleState'),
+            processingState: document.getElementById('processingState'),
+            statusMessage: document.getElementById('statusMessage')
+        };
+
+        function updateUI(hasKey) {
+            if (hasKey) {
+                elements.keyStatusLabel.classList.add('hidden');
+                elements.toggleConfigBtn.classList.remove('hidden');
+                elements.apiKeyConfigBody.classList.add('hidden');
+            } else {
+                elements.keyStatusLabel.classList.remove('hidden');
+                elements.toggleConfigBtn.classList.add('hidden');
+                elements.apiKeyConfigBody.classList.remove('hidden');
+            }
+        }
+
+        function loadKey() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved && saved.trim().length > 10) {
+                    currentApiKey = saved.trim();
+                    elements.userApiKey.value = currentApiKey;
+                    updateUI(true);
+                    return true;
+                }
+            } catch (e) {
+                console.error("Storage access error:", e);
+            }
+            updateUI(false);
+            return false;
+        }
+
+        function saveKey() {
+            const val = elements.userApiKey.value.trim();
+            if (val.length < 10) {
+                showToast("有効なキーを入力してください", true);
+                return;
+            }
+            
+            try {
+                localStorage.setItem(STORAGE_KEY, val);
+                currentApiKey = val;
+                updateUI(true);
+                showToast("APIキーを保存しました。次回から入力を省略できます。");
+            } catch (e) {
+                showToast("保存に失敗しました。ブラウザの設定を確認してください。", true);
+            }
+        }
+
+        loadKey();
+
+        elements.saveKeyBtn.onclick = saveKey;
+        elements.toggleConfigBtn.onclick = () => {
+            elements.apiKeyConfigBody.classList.toggle('hidden');
+        };
+        elements.clearKeyBtn.onclick = () => {
+            if(confirm("保存されているAPIキーを完全に削除しますか？")) {
+                localStorage.removeItem(STORAGE_KEY);
+                currentApiKey = '';
+                elements.userApiKey.value = '';
+                updateUI(false);
+                showToast("キーを削除しました");
+            }
+        };
+
+        elements.dropZone.onclick = () => elements.fileInput.click();
+        elements.fileInput.onchange = (e) => { if (e.target.files[0]) processFile(e.target.files[0]); };
+        elements.dropZone.ondragover = (e) => { e.preventDefault(); elements.dropZone.classList.add('active'); };
+        elements.dropZone.ondragleave = () => elements.dropZone.classList.remove('active');
+        elements.dropZone.ondrop = (e) => {
+            e.preventDefault();
+            elements.dropZone.classList.remove('active');
+            if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+        };
+
+        async function processFile(file) {
+            if (!currentApiKey) {
+                showToast("先にAPIキーを設定・保存してください", true);
+                elements.apiKeyConfigBody.classList.remove('hidden');
+                return;
+            }
+            
+            elements.idleState.classList.add('hidden');
+            elements.processingState.classList.remove('hidden');
+            elements.statusMessage.innerText = "画像を解析中...";
+
+            try {
+                const base64 = (await fileToBase64(file)).split(',')[1];
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Extract mind map structure from this image. Output only hierarchical text using '1. Root', '1.1. Child' format. If not a mind map, output 'NOT_A_MINDMAP'." }, { inlineData: { mimeType: "image/png", data: base64 } }] }] })
+                });
+
+                if (!res.ok) throw new Error("API通信エラー。キーが有効か確認してください。");
+                const data = await res.json();
+                const text = data.candidates[0].content.parts[0].text;
+
+                if (text.includes("NOT_A_MINDMAP")) throw new Error("マインドマップ図として認識できませんでした。");
+
+                const xml = convertToMM(text);
+                downloadFile(xml);
+                showToast("変換完了しました！");
+            } catch (err) {
+                showToast(err.message, true);
+            } finally {
+                elements.idleState.classList.remove('hidden');
+                elements.processingState.classList.add('hidden');
+                elements.fileInput.value = "";
+            }
+        }
+
+        function convertToMM(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => /^\d/.test(l));
+            let xml = '<?xml version="1.0" encoding="UTF-8"?><map version="freeplane 1.11.1">';
+            const stack = [];
+            lines.forEach((line, i) => {
+                const match = line.match(/^([\d.]+)\s*(.*)$/);
+                if (!match) return;
+                const level = match[1] === "0" ? 0 : match[1].split('.').filter(s => s !== "").length;
+                while (stack.length > 0 && stack[stack.length - 1] >= level) {
+                    xml += "</node>";
+                    stack.pop();
+                }
+                xml += `<node TEXT="${match[2].replace(/[<>&"']/g, "")}" ID="ID_${i}">`;
+                stack.push(level);
+            });
+            while (stack.length > 0) { xml += "</node>"; stack.pop(); }
+            return xml + '</map>';
+        }
+
+        function downloadFile(xml) {
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mindmap_${Date.now()}.mm`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function fileToBase64(f) { return new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(f); }); }
+        
+        function showToast(m, isError = false) {
+            const t = document.createElement('div');
+            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white px-6 py-3 rounded-full text-xs shadow-xl z-50 whitespace-nowrap`;
+            t.innerText = m;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

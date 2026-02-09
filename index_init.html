@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindMap to Freeplane (Auto Mode)</title>
-    
-    <!-- SVGを使用したファビコン（外部ファイル不要） -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='12' fill='%236750a4'/%3E%3Cpath d='M50 50 L80 30 M50 50 L80 70 M50 50 L20 50' stroke='%236750a4' stroke-width='4'/%3E%3Ccircle cx='80' cy='30' r='8' fill='%236750a4'/%3E%3Ccircle cx='80' cy='70' r='8' fill='%236750a4'/%3E%3Ccircle cx='20' cy='50' r='8' fill='%236750a4'/%3E%3C/svg%3E">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -24,19 +20,9 @@
 <body class="p-4 md:p-8 flex flex-col min-h-screen">
     <div class="max-w-2xl mx-auto flex-grow w-full">
         <header class="mb-8 text-center">
-            <!-- タイトル横にアイコンを表示 -->
-            <div class="flex items-center justify-center gap-3 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="12" fill="#6750a4"/>
-                    <path d="M50 50 L80 30 M50 50 L80 70 M50 50 L20 50" stroke="#6750a4" stroke-width="4"/>
-                    <circle cx="80" cy="30" r="8" fill="#6750a4"/>
-                    <circle cx="80" cy="70" r="8" fill="#6750a4"/>
-                    <circle cx="20" cy="50" r="8" fill="#6750a4"/>
-                </svg>
-                <h1 class="text-3xl font-bold">MindMap NotebookLM to Freeplane</h1>
-            </div>
-            <p class="text-[#49454f]">画像をドロップするだけで .mm 形式に変換</p>
-        </header>
+            <h1 class="text-3xl font-bold mb-2">MindMap：png を mm に変換</h1>
+            <p class="text-[#49454f]">画像 .png をドロップするだけで .mm ファイルを生成</p>
+        </header>1
 
         <!-- API Key Setup -->
         <div class="m3-card p-6 mb-6">

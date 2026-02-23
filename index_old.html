@@ -196,18 +196,13 @@
 
             try {
                 const base64 = (await fileToBase64(file)).split(',')[1];
-                // モデル名を最新の安定版名称に変更
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: "Extract mind map structure from this image. Output only hierarchical text using '1. Root', '1.1. Child' format. If not a mind map, output 'NOT_A_MINDMAP'." }, { inlineData: { mimeType: "image/png", data: base64 } }] }] })
                 });
 
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    const errorMsg = errorData.error?.message || "不明なエラー";
-                    throw new Error(`APIエラー (${res.status}): ${errorMsg}`);
-                }
+                if (!res.ok) throw new Error("API通信エラー。キーが有効か確認してください。");
                 const data = await res.json();
                 const text = data.candidates[0].content.parts[0].text;
 

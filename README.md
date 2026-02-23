@@ -30,8 +30,13 @@
 ## 📄 技術スタック
 - Frontend: HTML5, Tailwind CSS
 - Icon: Google Material Symbols, Inline SVG
-- AI Model: Google Gemini 2.5 Flash (gemini-2.5-flash-preview-09-2025)
+- AI Model: Google Gemini 2.5 Flash (gemini-2.5-flash-image)
 - Format: Freeplane XML (.mm)
+
+## 📝 更新履歴
+- **2025/02/23**: 
+    - 廃止されたプレビューモデル (`gemini-2.5-flash-preview-09-2025`) を最新の安定版モデル (`gemini-2.5-flash-image`) に更新。
+    - APIエラー時のメッセージを詳細化し、原因（モデル名、クォータ制限など）を特定しやすく改善。
 
 ## ⚖️ ライセンス
 

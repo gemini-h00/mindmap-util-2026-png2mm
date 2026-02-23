@@ -1,268 +1,635 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindMap to Freeplane (Auto Mode)</title>
-    
-    <!-- SVGを使用したファビコン（外部ファイル不要） -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='12' fill='%236750a4'/%3E%3Cpath d='M50 50 L80 30 M50 50 L80 70 M50 50 L20 50' stroke='%236750a4' stroke-width='4'/%3E%3Ccircle cx='80' cy='30' r='8' fill='%236750a4'/%3E%3Ccircle cx='80' cy='70' r='8' fill='%236750a4'/%3E%3Ccircle cx='20' cy='50' r='8' fill='%236750a4'/%3E%3C/svg%3E">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindMap to Freeplane (Auto Mode)</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; color: #1c1b1f; }
-        .drop-zone { border: 2px dashed #6750a4; transition: all 0.2s ease; height: 300px; }
-        .drop-zone.active { background-color: #eaddff; border-color: #21005d; transform: scale(1.01); }
-        .m3-card { background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e0e0e0; }
-        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #6750a4; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .api-link:hover { text-decoration: underline; }
-    </style>
+  <!-- SVG favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='12' fill='%236750a4'/%3E%3Cpath d='M50 50 L80 30 M50 50 L80 70 M50 50 L20 50' stroke='%236750a4' stroke-width='4'/%3E%3Ccircle cx='80' cy='30' r='8' fill='%236750a4'/%3E%3Ccircle cx='80' cy='70' r='8' fill='%236750a4'/%3E%3Ccircle cx='20' cy='50' r='8' fill='%236750a4'/%3E%3C/svg%3E">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+  <style>
+    body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; color: #1c1b1f; }
+    .drop-zone { border: 2px dashed #6750a4; transition: all 0.2s ease; height: 300px; }
+    .drop-zone.active { background-color: #eaddff; border-color: #21005d; transform: scale(1.01); }
+    .m3-card { background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e0e0e0; }
+    .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #6750a4; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .api-link:hover { text-decoration: underline; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
 </head>
+
 <body class="p-4 md:p-8 flex flex-col min-h-screen">
-    <div class="max-w-2xl mx-auto flex-grow w-full">
-        <header class="mb-8 text-center">
-            <!-- タイトル横にアイコンを表示 -->
-            <div class="flex items-center justify-center gap-3 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="12" fill="#6750a4"/>
-                    <path d="M50 50 L80 30 M50 50 L80 70 M50 50 L20 50" stroke="#6750a4" stroke-width="4"/>
-                    <circle cx="80" cy="30" r="8" fill="#6750a4"/>
-                    <circle cx="80" cy="70" r="8" fill="#6750a4"/>
-                    <circle cx="20" cy="50" r="8" fill="#6750a4"/>
-                </svg>
-                <h1 class="text-3xl font-bold">MindMap NotebookLM to Freeplane</h1>
-            </div>
-            <p class="text-[#49454f]">画像をドロップするだけで .mm 形式に変換</p>
-        </header>
+  <div class="max-w-2xl mx-auto flex-grow w-full">
+    <header class="mb-8 text-center">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="12" fill="#6750a4"/>
+          <path d="M50 50 L80 30 M50 50 L80 70 M50 50 L20 50" stroke="#6750a4" stroke-width="4"/>
+          <circle cx="80" cy="30" r="8" fill="#6750a4"/>
+          <circle cx="80" cy="70" r="8" fill="#6750a4"/>
+          <circle cx="20" cy="50" r="8" fill="#6750a4"/>
+        </svg>
+        <h1 class="text-3xl font-bold">MindMap NotebookLM to Freeplane</h1>
+      </div>
+      <p class="text-[#49454f]">画像をドロップするだけで .mm 形式に変換</p>
+    </header>
 
-        <!-- API Key Setup -->
-        <div class="m3-card p-6 mb-6">
-            <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold flex items-center gap-2 text-[#6750a4]">
-                    <span class="material-symbols-outlined text-lg">vpn_key</span>
-                    API キー設定
-                </h2>
-                <div class="flex items-center gap-2">
-                    <button id="toggleConfigBtn" class="hidden text-[11px] font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 border border-green-200">
-                        設定済み（クリックで変更）
-                    </button>
-                    <span id="keyStatusLabel" class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">未設定</span>
-                </div>
-            </div>
+    <!-- API Key Setup -->
+    <div class="m3-card p-6 mb-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold flex items-center gap-2 text-[#6750a4]">
+          <span class="material-symbols-outlined text-lg">vpn_key</span>
+          API キー設定
+        </h2>
+        <div class="flex items-center gap-2">
+          <button id="toggleConfigBtn"
+                  class="hidden text-[11px] font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 border border-green-200">
+            設定済み（クリックで変更）
+          </button>
+          <span id="keyStatusLabel" class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">未設定</span>
+        </div>
+      </div>
 
-            <div id="apiKeyConfigBody" class="mt-4">
-                <div class="mb-3">
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-link text-[11px] text-[#6750a4] flex items-center gap-1 font-medium">
-                        <span class="material-symbols-outlined text-sm">open_in_new</span>
-                        Google AI Studio で API キーを取得する (Get API KEY)
-                    </a>
-                </div>
-                <div class="flex gap-2">
-                    <input type="password" id="userApiKey" placeholder="Gemini APIキーを入力" 
-                        class="flex-1 p-3 text-sm rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-[#6750a4]">
-                    <button id="saveKeyBtn" title="保存" class="p-3 bg-[#6750a4] text-white rounded-xl hover:bg-[#21005d] flex items-center gap-1 px-4">
-                        <span class="material-symbols-outlined text-sm">save</span>
-                        <span class="text-xs font-bold">保存</span>
-                    </button>
-                    <button id="clearKeyBtn" title="削除" class="p-3 text-red-500 hover:bg-red-50 rounded-xl">
-                        <span class="material-symbols-outlined">delete_forever</span>
-                    </button>
-                </div>
-                <p class="text-[10px] text-gray-400 mt-2 text-center">
-                    ※一度保存すると、次回から入力は不要です（ブラウザに保存されます）。
-                </p>
-            </div>
+      <div id="apiKeyConfigBody" class="mt-4">
+        <div class="mb-3">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank"
+             class="api-link text-[11px] text-[#6750a4] flex items-center gap-1 font-medium">
+            <span class="material-symbols-outlined text-sm">open_in_new</span>
+            Google AI Studio で API キーを取得する (Get API KEY)
+          </a>
         </div>
 
-        <div id="dropZone" class="drop-zone m3-card flex flex-col items-center justify-center cursor-pointer mb-6 bg-[#fcfbff]">
-            <div id="idleState" class="flex flex-col items-center text-center px-4">
-                <div class="w-20 h-20 bg-[#eaddff] rounded-full flex items-center justify-center mb-4">
-                    <span class="material-symbols-outlined text-4xl text-[#21005d]">upload_file</span>
-                </div>
-                <p class="text-lg font-bold">画像をここにドロップ</p>
-                <p class="text-sm text-[#49454f] mt-1">自動的に解析して Freeplane 形式でダウンロードします</p>
-            </div>
-
-            <div id="processingState" class="hidden flex flex-col items-center">
-                <div class="loading-spinner mb-4"></div>
-                <p id="statusMessage" class="text-lg font-bold">処理中...</p>
-            </div>
-            <input type="file" id="fileInput" class="hidden" accept="image/*">
+        <div class="flex gap-2">
+          <input type="password" id="userApiKey" placeholder="Gemini APIキーを入力"
+                 class="flex-1 p-3 text-sm rounded-xl border border-gray-300 outline-none focus:ring-2 focus:ring-[#6750a4]">
+          <button id="saveKeyBtn" title="保存"
+                  class="p-3 bg-[#6750a4] text-white rounded-xl hover:bg-[#21005d] flex items-center gap-1 px-4">
+            <span class="material-symbols-outlined text-sm">save</span>
+            <span class="text-xs font-bold">保存</span>
+          </button>
+          <button id="clearKeyBtn" title="削除" class="p-3 text-red-500 hover:bg-red-50 rounded-xl">
+            <span class="material-symbols-outlined">delete_forever</span>
+          </button>
         </div>
+
+        <div class="mt-3 text-[11px] text-gray-500 leading-relaxed">
+          <p class="text-center">
+            ※保存すると次回から入力不要（LocalStorage）。公開アプリのため、可能なら<strong>APIキー側で HTTP Referrer 制限</strong>も推奨。
+          </p>
+        </div>
+      </div>
     </div>
 
-    <script>
-        const STORAGE_KEY = 'freeplane_conv_api_key_v1';
-        let currentApiKey = '';
+    <div id="dropZone" class="drop-zone m3-card flex flex-col items-center justify-center cursor-pointer mb-6 bg-[#fcfbff]">
+      <div id="idleState" class="flex flex-col items-center text-center px-4">
+        <div class="w-20 h-20 bg-[#eaddff] rounded-full flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-4xl text-[#21005d]">upload_file</span>
+        </div>
+        <p class="text-lg font-bold">画像をここにドロップ</p>
+        <p class="text-sm text-[#49454f] mt-1">自動的に解析して Freeplane 形式でダウンロードします</p>
+      </div>
 
-        const elements = {
-            userApiKey: document.getElementById('userApiKey'),
-            saveKeyBtn: document.getElementById('saveKeyBtn'),
-            clearKeyBtn: document.getElementById('clearKeyBtn'),
-            keyStatusLabel: document.getElementById('keyStatusLabel'),
-            toggleConfigBtn: document.getElementById('toggleConfigBtn'),
-            apiKeyConfigBody: document.getElementById('apiKeyConfigBody'),
-            dropZone: document.getElementById('dropZone'),
-            fileInput: document.getElementById('fileInput'),
-            idleState: document.getElementById('idleState'),
-            processingState: document.getElementById('processingState'),
-            statusMessage: document.getElementById('statusMessage')
-        };
+      <div id="processingState" class="hidden flex flex-col items-center">
+        <div class="loading-spinner mb-4"></div>
+        <p id="statusMessage" class="text-lg font-bold">処理中...</p>
+        <p id="subStatusMessage" class="text-[11px] text-gray-500 mt-2"></p>
+      </div>
 
-        function updateUI(hasKey) {
-            if (hasKey) {
-                elements.keyStatusLabel.classList.add('hidden');
-                elements.toggleConfigBtn.classList.remove('hidden');
-                elements.apiKeyConfigBody.classList.add('hidden');
-            } else {
-                elements.keyStatusLabel.classList.remove('hidden');
-                elements.toggleConfigBtn.classList.add('hidden');
-                elements.apiKeyConfigBody.classList.remove('hidden');
-            }
+      <input type="file" id="fileInput" class="hidden" accept="image/*">
+    </div>
+
+    <!-- debug/info -->
+    <div class="m3-card p-4 mb-8">
+      <div class="text-[11px] text-gray-600 leading-relaxed">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-base text-[#6750a4]">info</span>
+          <span class="font-bold">動作ヒント</span>
+        </div>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>429（TooManyRequests）は「待てば回復」することが多いです。表示された秒数を待って再試行します。</li>
+          <li>404（NotFound）が出た場合は、モデル名の変更が原因のことがあります（このページは自動で別モデルに切替を試みます）。</li>
+          <li>同じ画像はローカルにキャッシュされるので、再実行してもAPIを叩きません。</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ====== Settings ======
+    const STORAGE_KEY = 'freeplane_conv_api_key_v1';
+    const CACHE_KEY = 'freeplane_conv_cache_v1'; // localStorage JSON map: { [hash]: { mm, createdAt, model } }
+    const CACHE_MAX_ITEMS = 50;
+
+    // モデル候補（404対策：順に試す）
+    // ※ここは将来変わり得るので、候補を増やす/並び替えるだけで対応できます
+    const MODEL_CANDIDATES = [
+      'gemini-2.5-flash',     // まず通常のFlash系
+      'gemini-3-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
+    ];
+
+    // 画像軽量化：長辺をこのpxに収める（クォータ節約）
+    const MAX_IMAGE_SIDE = 1400; // 少し余裕を持たせつつ軽量化
+    const JPEG_QUALITY = 0.88;   // 0.7〜0.9で調整可
+
+    // 429時の再試行回数（多すぎると逆に枠を溶かすので控えめ）
+    const MAX_RETRIES_429 = 2;
+
+    // ====== State ======
+    let currentApiKey = '';
+    let isBusy = false;
+
+    const elements = {
+      userApiKey: document.getElementById('userApiKey'),
+      saveKeyBtn: document.getElementById('saveKeyBtn'),
+      clearKeyBtn: document.getElementById('clearKeyBtn'),
+      keyStatusLabel: document.getElementById('keyStatusLabel'),
+      toggleConfigBtn: document.getElementById('toggleConfigBtn'),
+      apiKeyConfigBody: document.getElementById('apiKeyConfigBody'),
+      dropZone: document.getElementById('dropZone'),
+      fileInput: document.getElementById('fileInput'),
+      idleState: document.getElementById('idleState'),
+      processingState: document.getElementById('processingState'),
+      statusMessage: document.getElementById('statusMessage'),
+      subStatusMessage: document.getElementById('subStatusMessage'),
+    };
+
+    function updateUI(hasKey) {
+      if (hasKey) {
+        elements.keyStatusLabel.classList.add('hidden');
+        elements.toggleConfigBtn.classList.remove('hidden');
+        elements.apiKeyConfigBody.classList.add('hidden');
+      } else {
+        elements.keyStatusLabel.classList.remove('hidden');
+        elements.toggleConfigBtn.classList.add('hidden');
+        elements.apiKeyConfigBody.classList.remove('hidden');
+      }
+    }
+
+    function loadKey() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved && saved.trim().length > 10) {
+          currentApiKey = saved.trim();
+          elements.userApiKey.value = currentApiKey;
+          updateUI(true);
+          return true;
+        }
+      } catch (e) {
+        console.error("Storage access error:", e);
+      }
+      updateUI(false);
+      return false;
+    }
+
+    function saveKey() {
+      const val = elements.userApiKey.value.trim();
+      if (val.length < 10) {
+        showToast("有効なキーを入力してください", true);
+        return;
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, val);
+        currentApiKey = val;
+        updateUI(true);
+        showToast("APIキーを保存しました。次回から入力を省略できます。");
+      } catch (e) {
+        showToast("保存に失敗しました。ブラウザの設定を確認してください。", true);
+      }
+    }
+
+    function setBusy(busy, message = "処理中...", sub = "") {
+      isBusy = busy;
+      if (busy) {
+        elements.idleState.classList.add('hidden');
+        elements.processingState.classList.remove('hidden');
+        elements.statusMessage.innerText = message;
+        elements.subStatusMessage.innerText = sub || "";
+        elements.dropZone.classList.add('pointer-events-none');
+        elements.dropZone.classList.add('opacity-80');
+      } else {
+        elements.idleState.classList.remove('hidden');
+        elements.processingState.classList.add('hidden');
+        elements.subStatusMessage.innerText = "";
+        elements.dropZone.classList.remove('pointer-events-none');
+        elements.dropZone.classList.remove('opacity-80');
+        elements.fileInput.value = "";
+      }
+    }
+
+    loadKey();
+
+    elements.saveKeyBtn.onclick = saveKey;
+    elements.toggleConfigBtn.onclick = () => elements.apiKeyConfigBody.classList.toggle('hidden');
+    elements.clearKeyBtn.onclick = () => {
+      if (confirm("保存されているAPIキーを完全に削除しますか？")) {
+        localStorage.removeItem(STORAGE_KEY);
+        currentApiKey = '';
+        elements.userApiKey.value = '';
+        updateUI(false);
+        showToast("キーを削除しました");
+      }
+    };
+
+    elements.dropZone.onclick = () => elements.fileInput.click();
+    elements.fileInput.onchange = (e) => { if (e.target.files[0]) processFile(e.target.files[0]); };
+
+    elements.dropZone.ondragover = (e) => { e.preventDefault(); elements.dropZone.classList.add('active'); };
+    elements.dropZone.ondragleave = () => elements.dropZone.classList.remove('active');
+    elements.dropZone.ondrop = (e) => {
+      e.preventDefault();
+      elements.dropZone.classList.remove('active');
+      if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+    };
+
+    // ====== Cache helpers ======
+    function loadCache() {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (_) {}
+      return {};
+    }
+
+    function saveCache(cacheObj) {
+      try {
+        // cap items
+        const entries = Object.entries(cacheObj);
+        if (entries.length > CACHE_MAX_ITEMS) {
+          entries.sort((a,b) => (a[1]?.createdAt || 0) - (b[1]?.createdAt || 0));
+          const trimmed = entries.slice(entries.length - CACHE_MAX_ITEMS);
+          cacheObj = Object.fromEntries(trimmed);
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObj));
+      } catch (_) {
+        // ignore
+      }
+    }
+
+    // ====== Main ======
+    async function processFile(file) {
+      if (isBusy) return;
+
+      if (!currentApiKey) {
+        showToast("先にAPIキーを設定・保存してください", true);
+        elements.apiKeyConfigBody.classList.remove('hidden');
+        return;
+      }
+
+      setBusy(true, "画像を準備中...", "（サイズ最適化とキャッシュ確認）");
+
+      try {
+        // 画像を軽量化（長辺MAX_IMAGE_SIDEに収め、JPEG化）
+        const { dataBase64, mimeType, hash } = await preprocessAndHashImage(file);
+
+        // cache hit?
+        const cache = loadCache();
+        const hit = cache[hash];
+        if (hit && hit.mm) {
+          setBusy(true, "キャッシュから復元中...", `（以前の結果を使用: ${hit.model || 'cached'}）`);
+          downloadFile(hit.mm);
+          showToast("変換完了（キャッシュ）しました！");
+          return;
         }
 
-        function loadKey() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved && saved.trim().length > 10) {
-                    currentApiKey = saved.trim();
-                    elements.userApiKey.value = currentApiKey;
-                    updateUI(true);
-                    return true;
-                }
-            } catch (e) {
-                console.error("Storage access error:", e);
-            }
-            updateUI(false);
-            return false;
-        }
+        setBusy(true, "画像を解析中...", "（Gemini API 呼び出し）");
 
-        function saveKey() {
-            const val = elements.userApiKey.value.trim();
-            if (val.length < 10) {
-                showToast("有効なキーを入力してください", true);
-                return;
-            }
-            
-            try {
-                localStorage.setItem(STORAGE_KEY, val);
-                currentApiKey = val;
-                updateUI(true);
-                showToast("APIキーを保存しました。次回から入力を省略できます。");
-            } catch (e) {
-                showToast("保存に失敗しました。ブラウザの設定を確認してください。", true);
-            }
-        }
+        const prompt = [
+          "You will be given an image of a mind map.",
+          "Extract its hierarchical structure accurately.",
+          "Return ONLY hierarchical numbered lines in the following format:",
+          "1. Root",
+          "1.1 Child",
+          "1.1.1 Grandchild",
+          "Rules:",
+          "- Do not add any extra explanations.",
+          "- Do not wrap with code fences.",
+          "- If it's not a mind map, output exactly: NOT_A_MINDMAP"
+        ].join("\n");
 
-        loadKey();
+        // Try models with fallback
+        let lastErr = null;
+        let usedModel = null;
+        let responseText = null;
 
-        elements.saveKeyBtn.onclick = saveKey;
-        elements.toggleConfigBtn.onclick = () => {
-            elements.apiKeyConfigBody.classList.toggle('hidden');
-        };
-        elements.clearKeyBtn.onclick = () => {
-            if(confirm("保存されているAPIキーを完全に削除しますか？")) {
-                localStorage.removeItem(STORAGE_KEY);
-                currentApiKey = '';
-                elements.userApiKey.value = '';
-                updateUI(false);
-                showToast("キーを削除しました");
-            }
-        };
-
-        elements.dropZone.onclick = () => elements.fileInput.click();
-        elements.fileInput.onchange = (e) => { if (e.target.files[0]) processFile(e.target.files[0]); };
-        elements.dropZone.ondragover = (e) => { e.preventDefault(); elements.dropZone.classList.add('active'); };
-        elements.dropZone.ondragleave = () => elements.dropZone.classList.remove('active');
-        elements.dropZone.ondrop = (e) => {
-            e.preventDefault();
-            elements.dropZone.classList.remove('active');
-            if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
-        };
-
-        async function processFile(file) {
-            if (!currentApiKey) {
-                showToast("先にAPIキーを設定・保存してください", true);
-                elements.apiKeyConfigBody.classList.remove('hidden');
-                return;
-            }
-            
-            elements.idleState.classList.add('hidden');
-            elements.processingState.classList.remove('hidden');
-            elements.statusMessage.innerText = "画像を解析中...";
-
-            try {
-                const base64 = (await fileToBase64(file)).split(',')[1];
-                // モデル名を最新の安定版名称に変更
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Extract mind map structure from this image. Output only hierarchical text using '1. Root', '1.1. Child' format. If not a mind map, output 'NOT_A_MINDMAP'." }, { inlineData: { mimeType: "image/png", data: base64 } }] }] })
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    const errorMsg = errorData.error?.message || "不明なエラー";
-                    throw new Error(`APIエラー (${res.status}): ${errorMsg}`);
-                }
-                const data = await res.json();
-                const text = data.candidates[0].content.parts[0].text;
-
-                if (text.includes("NOT_A_MINDMAP")) throw new Error("マインドマップ図として認識できませんでした。");
-
-                const xml = convertToMM(text);
-                downloadFile(xml);
-                showToast("変換完了しました！");
-            } catch (err) {
-                showToast(err.message, true);
-            } finally {
-                elements.idleState.classList.remove('hidden');
-                elements.processingState.classList.add('hidden');
-                elements.fileInput.value = "";
-            }
-        }
-
-        function convertToMM(text) {
-            const lines = text.split('\n').map(l => l.trim()).filter(l => /^\d/.test(l));
-            let xml = '<?xml version="1.0" encoding="UTF-8"?><map version="freeplane 1.11.1">';
-            const stack = [];
-            lines.forEach((line, i) => {
-                const match = line.match(/^([\d.]+)\s*(.*)$/);
-                if (!match) return;
-                const level = match[1] === "0" ? 0 : match[1].split('.').filter(s => s !== "").length;
-                while (stack.length > 0 && stack[stack.length - 1] >= level) {
-                    xml += "</node>";
-                    stack.pop();
-                }
-                xml += `<node TEXT="${match[2].replace(/[<>&"']/g, "")}" ID="ID_${i}">`;
-                stack.push(level);
+        for (const model of MODEL_CANDIDATES) {
+          usedModel = model;
+          try {
+            responseText = await callGeminiGenerateContentWithRetry({
+              apiKey: currentApiKey,
+              model,
+              textPrompt: prompt,
+              imageBase64: dataBase64,
+              imageMimeType: mimeType,
             });
-            while (stack.length > 0) { xml += "</node>"; stack.pop(); }
-            return xml + '</map>';
+            // success
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+
+            // 404: try next model
+            if (e && e._httpStatus === 404) {
+              elements.subStatusMessage.innerText = `モデル ${model} は利用不可の可能性（404）。別モデルで再試行...`;
+              continue;
+            }
+
+            // 429: already retried inside; still failing -> do not spam other models
+            if (e && e._httpStatus === 429) {
+              break;
+            }
+
+            // other errors: likely won't be fixed by model fallback
+            break;
+          }
         }
 
-        function downloadFile(xml) {
-            const blob = new Blob([xml], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mindmap_${Date.now()}.mm`;
-            a.click();
-            URL.revokeObjectURL(url);
+        if (lastErr) {
+          throw lastErr;
         }
 
-        function fileToBase64(f) { return new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(f); }); }
-        
-        function showToast(m, isError = false) {
-            const t = document.createElement('div');
-            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white px-6 py-3 rounded-full text-xs shadow-xl z-50 whitespace-nowrap`;
-            t.innerText = m;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 4000);
+        if (!responseText) {
+          throw new Error("APIから有効な応答が得られませんでした。");
         }
-    </script>
+
+        if (responseText.includes("NOT_A_MINDMAP")) {
+          throw new Error("マインドマップ図として認識できませんでした。");
+        }
+
+        const xml = convertToMM(responseText);
+        downloadFile(xml);
+
+        // store cache
+        const cache2 = loadCache();
+        cache2[hash] = { mm: xml, createdAt: Date.now(), model: usedModel };
+        saveCache(cache2);
+
+        showToast("変換完了しました！");
+      } catch (err) {
+        const msg = formatFriendlyError(err);
+        showToast(msg, true);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function callGeminiGenerateContentWithRetry({ apiKey, model, textPrompt, imageBase64, imageMimeType }) {
+      let attempt = 0;
+      let lastErr = null;
+
+      while (attempt <= MAX_RETRIES_429) {
+        try {
+          return await callGeminiGenerateContent({ apiKey, model, textPrompt, imageBase64, imageMimeType });
+        } catch (e) {
+          lastErr = e;
+
+          if (e && e._httpStatus === 429 && attempt < MAX_RETRIES_429) {
+            const waitMs = parseRetryAfterMs(e) ?? (1500 * Math.pow(2, attempt));
+            setBusy(true, "レート制限のため待機中...", `（${Math.ceil(waitMs/1000)}秒後に自動再試行）`);
+            await sleep(waitMs);
+            attempt++;
+            continue;
+          }
+
+          throw e;
+        }
+      }
+
+      throw lastErr || new Error("レート制限により処理できませんでした。");
+    }
+
+    async function callGeminiGenerateContent({ apiKey, model, textPrompt, imageBase64, imageMimeType }) {
+      // v1beta endpoint
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+      const body = {
+        contents: [{
+          parts: [
+            { text: textPrompt },
+            { inlineData: { mimeType: imageMimeType, data: imageBase64 } }
+          ]
+        }]
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        let errorData = {};
+        try { errorData = await res.json(); } catch (_) {}
+
+        const e = new Error(errorData?.error?.message || `APIエラー (${res.status})`);
+        e._httpStatus = res.status;
+        e._raw = errorData;
+
+        // pass through Retry-After
+        const ra = res.headers.get('retry-after');
+        if (ra) e._retryAfter = ra;
+
+        throw e;
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("\n") || "";
+      return text.trim();
+    }
+
+    // ====== Image preprocessing ======
+    async function preprocessAndHashImage(file) {
+      // Decode to bitmap and resize, then export JPEG to reduce payload
+      const bitmap = await createImageBitmap(file);
+      const { canvas, ctx, outW, outH } = createResizedCanvas(bitmap.width, bitmap.height, MAX_IMAGE_SIDE);
+
+      ctx.drawImage(bitmap, 0, 0, outW, outH);
+
+      // Export as JPEG (stable + smaller). If source is PNG with transparency, white background.
+      // Fill white background first
+      const imgData = ctx.getImageData(0, 0, outW, outH);
+      // If alpha exists, blend onto white
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        const a = imgData.data[i + 3] / 255;
+        if (a < 1) {
+          imgData.data[i] = Math.round(imgData.data[i] * a + 255 * (1 - a));
+          imgData.data[i + 1] = Math.round(imgData.data[i + 1] * a + 255 * (1 - a));
+          imgData.data[i + 2] = Math.round(imgData.data[i + 2] * a + 255 * (1 - a));
+          imgData.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY));
+      if (!blob) throw new Error("画像の変換に失敗しました（toBlob）。");
+
+      const arrayBuffer = await blob.arrayBuffer();
+      const hash = await sha256Hex(arrayBuffer);
+
+      const base64 = arrayBufferToBase64(arrayBuffer);
+      return { dataBase64: base64, mimeType: "image/jpeg", hash };
+    }
+
+    function createResizedCanvas(srcW, srcH, maxSide) {
+      let outW = srcW;
+      let outH = srcH;
+
+      const longer = Math.max(srcW, srcH);
+      if (longer > maxSide) {
+        const scale = maxSide / longer;
+        outW = Math.round(srcW * scale);
+        outH = Math.round(srcH * scale);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      return { canvas, ctx, outW, outH };
+    }
+
+    async function sha256Hex(arrayBuffer) {
+      const digest = await crypto.subtle.digest("SHA-256", arrayBuffer);
+      const bytes = new Uint8Array(digest);
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    // ====== Freeplane conversion ======
+    function convertToMM(text) {
+      // Expect numbered lines
+      const lines = text.split('\n')
+        .map(l => l.trim())
+        .filter(l => /^\d/.test(l));
+
+      if (lines.length === 0) {
+        throw new Error("解析結果が空でした。画像が小さすぎる可能性があります。");
+      }
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<map version="freeplane 1.11.1">\n';
+      const stack = [];
+
+      const nextId = (() => {
+        let i = 0;
+        return () => `ID_${Date.now()}_${i++}`;
+      })();
+
+      const openNode = (label) => {
+        xml += `<node TEXT="${xmlEscape(label)}" ID="${nextId()}">\n`;
+      };
+      const closeNode = () => { xml += `</node>\n`; };
+
+      lines.forEach((line) => {
+        const match = line.match(/^([\d.]+)\s*(.*)$/);
+        if (!match) return;
+        const numbering = match[1];
+        const label = (match[2] || "").trim() || "(blank)";
+
+        const level = numbering.split('.').filter(s => s !== "").length;
+
+        while (stack.length > 0 && stack[stack.length - 1] >= level) {
+          closeNode();
+          stack.pop();
+        }
+
+        openNode(label);
+        stack.push(level);
+      });
+
+      while (stack.length > 0) {
+        closeNode();
+        stack.pop();
+      }
+
+      xml += `</map>`;
+      return xml;
+    }
+
+    function xmlEscape(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    // ====== Download ======
+    function downloadFile(xml) {
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mindmap_${Date.now()}.mm`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ====== Error helpers ======
+    function parseRetryAfterMs(err) {
+      // 1) Retry-After header
+      if (err && err._retryAfter) {
+        const v = String(err._retryAfter).trim();
+        const sec = Number(v);
+        if (!Number.isNaN(sec)) return sec * 1000;
+      }
+
+      // 2) message like "try in 53.36s"
+      const msg = (err && err.message) ? String(err.message) : "";
+      const m = msg.match(/try in\s+([0-9.]+)s/i);
+      if (m) {
+        const sec = Number(m[1]);
+        if (!Number.isNaN(sec)) return Math.ceil(sec * 1000);
+      }
+      return null;
+    }
+
+    function formatFriendlyError(err) {
+      const status = err?._httpStatus;
+
+      if (status === 401 || status === 403) {
+        return "認証エラー（401/403）: APIキーが無効、または権限が不足しています。キーを作り直す／制限設定を確認してください。";
+      }
+      if (status === 404) {
+        return "404（NotFound）: 指定モデルが利用できません。しばらくして再試行、または別モデルで実行してください。";
+      }
+      if (status === 429) {
+        return "429（TooManyRequests）: レート制限/クォータ制限です。少し待ってから再試行してください（このページは自動再試行も行います）。";
+      }
+
+      const rawMsg = err?.message ? String(err.message) : "不明なエラー";
+      return rawMsg;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ====== Toast ======
+    function showToast(m, isError = false) {
+      const t = document.createElement('div');
+      t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white px-6 py-3 rounded-full text-xs shadow-xl z-50 whitespace-nowrap`;
+      t.innerText = m;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 4500);
+    }
+  </script>
 </body>
 </html>
